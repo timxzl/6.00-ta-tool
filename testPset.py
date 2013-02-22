@@ -16,7 +16,8 @@ OSX_JUNK_DIR = '__purged_osx_junks'
 def sample_script():
     init()
     moved, notmoved = move_all()
-    print notmoved
+    print 'not moved:', notmoved
+    raw_input('Please check the not moved')
     purge_osx_junks('.')
     for f in moved:
         flattern_dir(f)
@@ -157,3 +158,69 @@ def flattern_dir(root):
                 os.rename(oldpath, newpath)
             print 'rmdir', subdir
             os.rmdir(subdir)
+
+PROB_NUM_RE = '(?:Problem\s*(?:Set)?|PS|PSet)\s*[1-2]\s*(?:[^a-zA-Z]*Question)?\s*([A-C]|\.[1-3])|Problem\s*([A-C1-3])'
+PROB_NUM_MATCHER = re.compile(PROB_NUM_RE, flags=re.IGNORECASE)
+def extract_num(comment):
+    """
+    extract problem number from a one line comment
+    case-insensitive
+    """
+
+    def translate_num(num):
+        if num.startswith('.'):
+            num = num[1:]
+        num = num.lower()
+        if num>='a' and num<='c':
+            return num
+        elif num>='1' and num<='3':
+            return chr(ord('a')+ord(num)-ord('1'))
+        else:
+            print 'Error! Invalid num', num, 'in line', comment
+            assert False
+            return None
+            
+    m = PROB_NUM_MATCHER.search(comment)
+    if m != None:
+        for num in m.groups():
+            if num != None:
+                num = translate_num(num)
+                return num
+
+    return None
+
+def extract_prob_num(path):
+    """
+    extract the problem number from a source file "path"
+    """
+    with open(path) as infile:
+        while True:
+            line = infile.readline()
+            if len(line) == 0:
+                return None
+            if line.startswith('#'):
+                num = extract_num(line)
+                if num != None:
+                    return num
+            else:
+                if len(line.strip()) > 0:
+                    return None
+
+INFO_FILE_EXT = '.__Prob_Info__'
+def get_all_prob_num(root):
+    result = []
+    no_prob_num = []
+    for path, dirs, files in os.walk(root):
+        for f in files:
+            if f.find(INFO_FILE_EXT) < 0:
+                fname = os.path.join(path, f)
+                num = extract_prob_num(fname)
+                if num == None:
+                    print 'Cannot get prob num', fname
+                    no_prob_num.append(fname)
+                else:
+                    result.append(fname)
+                    info = fname + INFO_FILE_EXT
+                    with open(info, mode='w') as outfile:
+                        outfile.write(num)
+    return [result, no_prob_num]
