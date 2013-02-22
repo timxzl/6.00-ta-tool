@@ -170,11 +170,11 @@ def extract_num(comment):
     def translate_num(num):
         if num.startswith('.'):
             num = num[1:]
-        num = num.lower()
-        if num>='a' and num<='c':
+        num = num.capitalize()
+        if num>='A' and num<='C':
             return num
         elif num>='1' and num<='3':
-            return chr(ord('a')+ord(num)-ord('1'))
+            return chr(ord('A')+ord(num)-ord('1'))
         else:
             print 'Error! Invalid num', num, 'in line', comment
             assert False
@@ -224,3 +224,41 @@ def get_all_prob_num(root):
                     with open(info, mode='w') as outfile:
                         outfile.write(num)
     return [result, no_prob_num]
+
+PROB_DICT = {'A': '__probA', 'B': '__probB', 'C': '__probC'}
+def gather_probs(root, prob_dict):
+    """
+    prob_dict: {'A': dir_for_probA, 'B': dir_for_probB, ...}
+    gather all source code inside root to directories
+    """
+    for path, dirs, files in os.walk(root):
+        for f in files:
+            if f.endswith(INFO_FILE_EXT):
+                with open(os.path.join(path, f)) as numf:
+                    num = numf.read(1)
+                sourcefile = f[:-len(INFO_FILE_EXT)]
+                oldpath = os.path.join(path, sourcefile)
+                if os.path.exists(oldpath):
+                    newdir = os.path.join(prob_dict[num], path)
+                    ensure_path(newdir)
+                    newpath = os.path.join(newdir, sourcefile)
+                    print oldpath, '->', newpath
+                    os.rename(oldpath, newpath)
+
+def testPy(path, name):
+    fpath = os.path.join(path, name)
+    infopath = fpath + INFO_FILE_EXT
+    try:
+        with open(infopath) as infile:
+            num = infile.read(1)
+    except IOError:
+        print 'No info file for', fpath
+        return
+    print 'Testing', fpath, 'for Problem', num
+
+def test(root):
+    for path, dirs, files in os.walk(root):
+        for f in files:
+            if f.find(INFO_FILE_EXT) < 0:
+                testPy(path, f)
+
