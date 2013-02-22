@@ -13,6 +13,14 @@ USED_ARCHIVE_DIR = '__inflated_archive_files'
 OSX_JUNKS = ['__MACOSX', '.DS_Store']
 OSX_JUNK_DIR = '__purged_osx_junks'
 
+def sample_script():
+    init()
+    moved, notmoved = move_all()
+    print notmoved
+    purge_osx_junks('.')
+    for f in moved:
+        flattern_dir(f)
+
 def init():
     ensure_dir(USED_ARCHIVE_DIR, OSX_JUNK_DIR)
 
