@@ -269,10 +269,14 @@ def test(root, tester):
 ENDING_FLOAT_RE = '[-+]?(?:\d*\.\d+|\d+\.?)(?:E[-+]?\d+)?'
 ENDING_FLOAT_MATCHER = re.compile(ENDING_FLOAT_RE, flags=re.IGNORECASE)
 def get_ending_float(line):
+##    print 'Trying to match', line,
+    match = None
     for match in ENDING_FLOAT_MATCHER.finditer(line):
         pass
     if match == None:
+##        print 'No Match!'
         return None
+##    print 'Match:', match.group()
     return float(match.group())
 
 def get_ending_floats(file_path, maxnum=-1):
@@ -284,17 +288,25 @@ def get_ending_floats(file_path, maxnum=-1):
     with open(file_path) as f:
         while maxnum != 0:
             line = f.readline()
+            if len(line) <= 0:
+                break
             fnum = get_ending_float(line)
             if fnum != None:
                 --maxnum
                 result.append(fnum)
     return result
 
+DEFAULT_OUTPUT_POSTFIX = '.__output__'
+DEFAULT_POINT_POSTFIX = '.__point__'
+DEFAULT_SCORE_POSTFIX = '.__score__'
 class ps1tester:
     """
     Tester for PS1
     """
-    def __init__(self, num, test_case_dir, ans_file_prefix, output_postfix):
+    def __init__(self, test_case_dir, ans_file_prefix,
+                 output_postfix = DEFAULT_OUTPUT_POSTFIX,
+                 point_postfix = DEFAULT_POINT_POSTFIX,
+                 score_postfix = DEFAULT_SCORE_POSTFIX):
         """
         Initialize the tester
         Read in every answer file and store to a dictionary
