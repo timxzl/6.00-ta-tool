@@ -245,20 +245,22 @@ def gather_probs(root, prob_dict):
                     print oldpath, '->', newpath
                     os.rename(oldpath, newpath)
 
-def testPy(path, name):
-    fpath = os.path.join(path, name)
-    infopath = fpath + INFO_FILE_EXT
-    try:
-        with open(infopath) as infile:
-            num = infile.read(1)
-    except IOError:
-        print 'No info file for', fpath
-        return
-    print 'Testing', fpath, 'for Problem', num
+def run_py(sourcef, inf, outf):
+    cmd = 'python ' + sourcef + ' < ' + inf + ' > ' + outf + ' 2>&1'
+    print cmd
+    os.system(cmd)
 
-def test(root):
+def run_cases(testcase_dir, output_postfix, sourcef):
+    for case in os.listdir(testcase_dir):
+        infile = os.path.join(testcase_dir, case)
+        outfile = sourcef + output_postfix + '.' + case
+##        print infile
+##        print outfile
+##        print sourcef
+        run_py(sourcef, infile, outfile)
+
+def test(root, tester):
     for path, dirs, files in os.walk(root):
         for f in files:
-            if f.find(INFO_FILE_EXT) < 0:
-                testPy(path, f)
-
+            sourcef = os.path.join(path, f)
+            tester(sourcef)
