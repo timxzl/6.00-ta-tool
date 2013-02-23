@@ -246,8 +246,9 @@ def gather_probs(root, prob_dict):
                     os.rename(oldpath, newpath)
 
 def run_py(sourcef, inf, outf):
+    os.remove(outf)
     cmd = 'python ' + sourcef + ' < ' + inf + ' > ' + outf + ' 2>&1'
-    print cmd
+##    print cmd
     os.system(cmd)
 
 def run_cases(testcase_dir, output_postfix, sourcef):
