@@ -265,3 +265,63 @@ def test(root, tester):
         for f in files:
             sourcef = os.path.join(path, f)
             tester(sourcef)
+
+ENDING_FLOAT_RE = '[-+]?(?:\d*\.\d+|\d+\.?)(?:E[-+]?\d+)?'
+ENDING_FLOAT_MATCHER = re.compile(ENDING_FLOAT_RE, flags=re.IGNORECASE)
+def get_ending_float(line):
+    for match in ENDING_FLOAT_MATCHER.finditer(line):
+        pass
+    if match == None:
+        return None
+    return float(match.group())
+
+def get_ending_floats(file_path, maxnum=-1):
+    """
+    read the ending float number from file file_path
+    we only read maxnum floats, -1 indicates infinite many
+    """
+    result = []
+    with open(file_path) as f:
+        while maxnum != 0:
+            line = f.readline()
+            fnum = get_ending_float(line)
+            if fnum != None:
+                --maxnum
+                result.append(fnum)
+    return result
+
+class ps1tester:
+    """
+    Tester for PS1
+    """
+    def __init__(self, num, test_case_dir, ans_file_prefix, output_postfix):
+        """
+        Initialize the tester
+        Read in every answer file and store to a dictionary
+            self.cases: infile_name => [infile_path, [floats]]
+        """
+        self.output_postfix = output_postfix
+        self.cases = {}
+        for f in os.listdir(test_case_dir):
+            infile_path = os.path.join(test_case_dir, f)
+            ans_file = ans_file_prefix + f
+            self.cases[f] = [infile_path, get_ending_floats(ans_file)]
+
+    def test(self, sourcef):
+        score = 0
+        print 'Testing', sourcef,
+        for key, [inf, ans] in self.cases.items():
+            outf = sourcef + output_postfix + '.' + key
+            run_py(sourcef, inf, outf)
+            out = get_ending_floats(outf, maxnum=len(ans))
+            if out == None or len(out) != len(ans):
+                point = 0
+            else:
+                point = 1
+                for i in range(len(ans)):
+                    if abs(ans[i] - out[i]) > 0.21:
+                        point = 0
+                        break
+            score += point
+            print point,
+        print 'Score:', score
