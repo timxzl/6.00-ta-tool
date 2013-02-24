@@ -247,7 +247,7 @@ def gather_probs(root, prob_dict):
                     print oldpath, '->', newpath
                     os.rename(oldpath, newpath)
 
-TIMEOUT = 10
+TIMEOUT = 20
 def run_py(sourcef, inf, outf):
     if os.path.exists(outf):
         os.remove(outf)
