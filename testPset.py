@@ -245,11 +245,11 @@ def gather_probs(root, prob_dict):
                     print oldpath, '->', newpath
                     os.rename(oldpath, newpath)
 
-TIMEOUT = 5
+TIMEOUT = 10
 def run_py(sourcef, inf, outf):
     if os.path.exists(outf):
         os.remove(outf)
-    cmd = 'timeout ' + TIMEOUT + ' python ' + sourcef + ' < ' + inf + ' > ' + outf
+    cmd = 'timeout ' + str(TIMEOUT) + ' python ' + sourcef + ' < ' + inf + ' > ' + outf
 ##    print cmd
     os.system(cmd)
 
@@ -381,4 +381,5 @@ def test_all(probnum):
     root = PROB_DICT[probnum]
     tester = ps1tester('__input'+probnum, '__answer'+probnum+'/A.ans.')
     test(root, tester.test)
+    return tester
 
