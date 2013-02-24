@@ -1,7 +1,9 @@
 #!/bin/sh
 mypid=$$
+secs=$1
+shift
 #echo mypid: $mypid
-./killmelater $mypid 5  &
+killmelater $mypid $secs  &
 subpid=$!
 #echo subpid: $subpid
 $@

@@ -245,10 +245,11 @@ def gather_probs(root, prob_dict):
                     print oldpath, '->', newpath
                     os.rename(oldpath, newpath)
 
+TIMEOUT = 5
 def run_py(sourcef, inf, outf):
     if os.path.exists(outf):
         os.remove(outf)
-    cmd = 'python ' + sourcef + ' < ' + inf + ' > ' + outf
+    cmd = 'timeout ' + TIMEOUT + ' python ' + sourcef + ' < ' + inf + ' > ' + outf
 ##    print cmd
     os.system(cmd)
 
@@ -261,11 +262,13 @@ def run_cases(testcase_dir, output_postfix, sourcef):
 ##        print sourcef
         run_py(sourcef, infile, outfile)
 
+AVOID_FILENAME = '__'
 def test(root, tester):
     for path, dirs, files in os.walk(root):
         for f in files:
-            sourcef = os.path.join(path, f)
-            tester(sourcef)
+            if not AVOID_FILENAME in f:
+                sourcef = os.path.join(path, f)
+                tester(sourcef)
 
 ENDING_FLOAT_RE = '[-+]?(?:\d*\.\d+|\d+\.?)(?:E[-+]?\d+)?'
 ENDING_FLOAT_MATCHER = re.compile(ENDING_FLOAT_RE, flags=re.IGNORECASE)
@@ -317,6 +320,7 @@ class ps1tester:
         self.point_postfix = point_postfix
         self.score_postfix = score_postfix
         self.cases = {}
+        self.scores = {}
         for f in os.listdir(test_case_dir):
             infile_path = os.path.join(test_case_dir, f)
             ans_file = ans_file_prefix + f
@@ -368,6 +372,7 @@ class ps1tester:
             with open(pointf, mode='w') as pf:
                 pf.writelines(str(point) + '\n\nReason:\n' + reason)
         print 'Score:', score
+        self.scores[sourcef] = [score, summary]
         scoref = sourcef + self.score_postfix
         with open(scoref, mode='w') as sf:
             sf.writelines(str(score) + summary)
