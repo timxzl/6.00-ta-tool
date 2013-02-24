@@ -1,5 +1,7 @@
 import os
 import os.path
+import subprocess
+import time
 import re
 import magic
 import zipfile
@@ -247,13 +249,24 @@ def gather_probs(root, prob_dict):
                     print oldpath, '->', newpath
                     os.rename(oldpath, newpath)
 
-TIMEOUT = 20
+TIMEOUT = 15
+POLL_INT = 1
 def run_py(sourcef, inf, outf):
     if os.path.exists(outf):
         os.remove(outf)
-    cmd = 'timeout ' + str(TIMEOUT) + ' python ' + sourcef + ' < ' + inf + ' > ' + outf
+    with open(inf) as infile:
+        with open(outf, mode='w') as outfile:
+            proc = subprocess.Popen(['python', sourcef], stdin=infile, stdout=outfile, stderr=None)
+            deadline = time.time() + TIMEOUT
+            while time.time() < deadline and proc.poll()==None:
+                time.sleep(POLL_INT)
+            result = proc.poll()
+            if result == None:
+                proc.terminate()
+    return result
+##    cmd = 'timeout ' + str(TIMEOUT) + ' python ' + sourcef + ' < ' + inf + ' > ' + outf
 ##    print cmd
-    os.system(cmd)
+##    os.system(cmd)
 
 def run_cases(testcase_dir, output_postfix, sourcef):
     for case in os.listdir(testcase_dir):
@@ -339,12 +352,16 @@ class ps1tester:
     def test(self, sourcef):
         score = 0
         summary = ''
-        print 'Testing', sourcef,
+        print 'Testing', sourcef
         for key in sorted(self.cases.keys()):
             [inf, ans] = self.cases[key]
             outf = sourcef + self.output_postfix + '.' + key
-            run_py(sourcef, inf, outf)
-            if not os.path.exists(outf):
+            result = run_py(sourcef, inf, outf)
+            if result == None:
+                point = 0
+                reason = 'TIMEOUT'
+                prompt = 'TIMEOUT'
+            elif not os.path.exists(outf):
                 point = 0
                 reason = 'No Output ' + outf
                 prompt = 'NoOut'
@@ -376,7 +393,7 @@ class ps1tester:
                         reason = reason + '\n'
                     
             score += point
-            print prompt,
+            print prompt
             summary = summary + key + ' : ' + prompt + '\n'
             pointf = sourcef + self.point_postfix + '.' + key
             with open(pointf, mode='w') as pf:
