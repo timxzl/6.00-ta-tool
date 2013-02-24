@@ -246,8 +246,9 @@ def gather_probs(root, prob_dict):
                     os.rename(oldpath, newpath)
 
 def run_py(sourcef, inf, outf):
-    os.remove(outf)
-    cmd = 'python ' + sourcef + ' < ' + inf + ' > ' + outf + ' 2>&1'
+    if os.path.exists(outf):
+        os.remove(outf)
+    cmd = 'python ' + sourcef + ' < ' + inf + ' > ' + outf
 ##    print cmd
     os.system(cmd)
 
@@ -313,6 +314,8 @@ class ps1tester:
             self.cases: infile_name => [infile_path, [floats]]
         """
         self.output_postfix = output_postfix
+        self.point_postfix = point_postfix
+        self.score_postfix = score_postfix
         self.cases = {}
         for f in os.listdir(test_case_dir):
             infile_path = os.path.join(test_case_dir, f)
@@ -321,19 +324,50 @@ class ps1tester:
 
     def test(self, sourcef):
         score = 0
+        summary = '\n\nSummary:\n'
         print 'Testing', sourcef,
-        for key, [inf, ans] in self.cases.items():
-            outf = sourcef + output_postfix + '.' + key
+        for key in sorted(self.cases.keys()):
+            [inf, ans] = self.cases[key]
+            outf = sourcef + self.output_postfix + '.' + key
             run_py(sourcef, inf, outf)
-            out = get_ending_floats(outf, maxnum=len(ans))
-            if out == None or len(out) != len(ans):
+            if not os.path.exists(outf):
                 point = 0
+                reason = 'No Output ' + outf
+                prompt = 'NoOut'
             else:
                 point = 1
-                for i in range(len(ans)):
-                    if abs(ans[i] - out[i]) > 0.21:
-                        point = 0
-                        break
+                try:
+                    out = get_ending_floats(outf, maxnum=len(ans))
+                except:
+                    point = 0
+                    reason = 'Error reading ' + outf
+                    prompt = 'Err'
+
+                if point > 0:
+                    prompt = 'ok'
+                    reason = ''
+                    for i in range(len(ans)):
+                        if i >= len(out):
+                            point = 0
+                            reason = reason + 'None' + '\t #' + str(ans[i]) + ' NA'
+                            prompt = 'Shorter'
+                        else:
+                            reason = reason + str(out[i]) + '\t # ' + str(ans[i])
+                            if abs(ans[i] - out[i]) > 0.21:
+                                point = 0
+                                prompt = 'Wrong'
+                                reason = reason + ' Wrong'
+                            else:
+                                reason = reason + ' OK'
+                        reason = reason + '\n'
+                    
             score += point
-            print point,
+            print prompt,
+            summary = summary + key + ' : ' + prompt + '\n'
+            pointf = sourcef + self.point_postfix + '.' + key
+            with open(pointf, mode='w') as pf:
+                pf.writelines(str(point) + '\n\nReason:\n' + reason)
         print 'Score:', score
+        scoref = sourcef + self.score_postfix
+        with open(scoref, mode='w') as sf:
+            sf.writelines(str(score) + summary)
