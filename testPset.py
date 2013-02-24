@@ -328,7 +328,7 @@ class ps1tester:
 
     def test(self, sourcef):
         score = 0
-        summary = '\n\nSummary:\n'
+        summary = ''
         print 'Testing', sourcef,
         for key in sorted(self.cases.keys()):
             [inf, ans] = self.cases[key]
@@ -375,11 +375,25 @@ class ps1tester:
         self.scores[sourcef] = [score, summary]
         scoref = sourcef + self.score_postfix
         with open(scoref, mode='w') as sf:
-            sf.writelines(str(score) + summary)
+            sf.writelines(str(score) + '\n\nSummary:\n' + summary)
+
+    def scores(self):
+        return self.scores
 
 def test_all(probnum):
     root = PROB_DICT[probnum]
     tester = ps1tester('__input'+probnum, '__answer'+probnum+'/A.ans.')
     test(root, tester.test)
+    r = tester.scores
+    result_file = os.path.join(root, '__test_result_.txt')
+    summary_file = os.path.join(root, '__summary__.txt')
+    with open(result_file, mode='w') as rf:
+        with open(summary_file, mode='w') as sf:
+            for key in sorted(r.keys()):
+                [score, summary] = r[key]
+                result = key + '\t' + str(score) + '\n'
+                rf.writelines(result)
+                sf.writelines(result + '\n' + summary + '\n\n')
+            
     return tester
 
