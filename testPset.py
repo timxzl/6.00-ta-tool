@@ -249,17 +249,20 @@ def gather_probs(root, prob_dict):
                     print oldpath, '->', newpath
                     os.rename(oldpath, newpath)
 
-TIMEOUT = 15
-POLL_INT = 1
+TIMEOUT = 5
+POLL_INT_START = 0.01
+POLL_INT_MAX = 1
 def run_py(sourcef, inf, outf):
     if os.path.exists(outf):
         os.remove(outf)
     with open(inf) as infile:
         with open(outf, mode='w') as outfile:
             proc = subprocess.Popen(['python', sourcef], stdin=infile, stdout=outfile, stderr=None)
+	    poll_int = POLL_INT_START
             deadline = time.time() + TIMEOUT
             while time.time() < deadline and proc.poll()==None:
-                time.sleep(POLL_INT)
+                time.sleep(poll_int)
+		poll_int = min(POLL_INT_MAX, poll_int*2)
             result = proc.poll()
             if result == None:
                 proc.terminate()
