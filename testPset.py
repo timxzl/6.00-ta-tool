@@ -159,7 +159,7 @@ def flattern_dir(root):
             print 'rmdir', subdir
             os.rmdir(subdir)
 
-PROB_NUM_RE = '(?:Problem\s*(?:Set)?|PS|PSet)\s*[1-2]\s*(?:[^a-zA-Z]*Question)?\s*([A-C]|\.[1-3])|Problem\s*([A-C1-3])'
+PROB_NUM_RE = '(?:Problem\s*(?:Set)?|PS|PSet)\s*[1-2]\s*(?:[^a-zA-Z]*Question)?\s*([A-C]|\.[1-3]|\([1-3A-C]\))|Problem\s*([A-C1-3])'
 PROB_NUM_MATCHER = re.compile(PROB_NUM_RE, flags=re.IGNORECASE)
 def extract_num(comment):
     """
@@ -168,8 +168,10 @@ def extract_num(comment):
     """
 
     def translate_num(num):
-        if num.startswith('.'):
+        if num.startswith('.') or num.startswith('('):
             num = num[1:]
+        if num.endswith(')'):
+            num = num[:-1]
         num = num.capitalize()
         if num>='A' and num<='C':
             return num
@@ -179,7 +181,7 @@ def extract_num(comment):
             print 'Error! Invalid num', num, 'in line', comment
             assert False
             return None
-            
+
     m = PROB_NUM_MATCHER.search(comment)
     if m != None:
         for num in m.groups():
@@ -272,8 +274,16 @@ def test(root, tester):
 
 ENDING_FLOAT_RE = '[-+]?(?:\d*\.\d+|\d+\.?)(?:E[-+]?\d+)?'
 ENDING_FLOAT_MATCHER = re.compile(ENDING_FLOAT_RE, flags=re.IGNORECASE)
+REMOVE_PROMPT_RE = '[\d]+\s*year'
+REMOVE_PROMPT_MATCHER = re.compile(REMOVE_PROMPT_RE, flags=re.IGNORECASE)
 def get_ending_float(line):
 ##    print 'Trying to match', line,
+    while True:
+        m = REMOVE_PROMPT_MATCHER.search(line)
+        if m == None:
+            break
+        line = line[0:m.start()] + line[m.end()+1:]
+
     match = None
     for match in ENDING_FLOAT_MATCHER.finditer(line):
         pass
@@ -382,7 +392,7 @@ class ps1tester:
 
 def test_all(probnum):
     root = PROB_DICT[probnum]
-    tester = ps1tester('__input'+probnum, '__answer'+probnum+'/A.ans.')
+    tester = ps1tester('__input'+probnum, '__answer'+probnum+'/' + probnum + '.ans.')
     test(root, tester.test)
     r = tester.scores
     result_file = os.path.join(root, '__test_result_.txt')
@@ -396,4 +406,11 @@ def test_all(probnum):
                 sf.writelines(result + '\n' + summary + '\n\n')
             
     return tester
+
+def sample_judge(probnum):
+    r = test_all(probnum)
+    for name, [score, summary] in r.scores.items():
+        if score < 7:
+            print name, score
+    return r
 
