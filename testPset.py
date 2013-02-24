@@ -371,3 +371,9 @@ class ps1tester:
         scoref = sourcef + self.score_postfix
         with open(scoref, mode='w') as sf:
             sf.writelines(str(score) + summary)
+
+def test_all(probnum):
+    root = PROB_DICT[probnum]
+    tester = ps1tester('__input'+probnum, '__answer'+probnum+'/A.ans.')
+    test(root, tester.test)
+
